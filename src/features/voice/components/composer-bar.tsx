@@ -18,6 +18,9 @@ const ERROR_MESSAGES: Record<SpeechError, string> = {
   other: "Não foi possível usar o microfone agora.",
 }
 
+// Abra o app com ?debug=voz para ver os eventos do reconhecimento na tela
+const DEBUG_VOICE = new URLSearchParams(window.location.search).get("debug") === "voz"
+
 const barButton =
   "flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 [&_svg]:size-5"
 
@@ -30,6 +33,7 @@ export function ComposerBar() {
       openCreate({ draft, source: "voice", transcript: spoken })
     },
     onError: (error) => toast.error(ERROR_MESSAGES[error]),
+    debug: DEBUG_VOICE,
   })
   const listening = speech.status === "listening"
 
@@ -55,12 +59,17 @@ export function ComposerBar() {
       return
     }
     if (listening) speech.stop()
-    else speech.start(false)
+    else speech.start()
   }
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
+        {DEBUG_VOICE && speech.log.length > 0 && (
+          <pre className="pointer-events-auto max-h-48 overflow-auto rounded-2xl border bg-card/95 p-3 font-mono text-[11px] leading-snug whitespace-pre-wrap text-muted-foreground select-text">
+            {speech.log.join("\n")}
+          </pre>
+        )}
         {listening && (
           <ListeningPanel transcript={speech.transcript} onCancel={speech.cancel} />
         )}
