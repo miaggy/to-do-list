@@ -18,8 +18,8 @@ const ERROR_MESSAGES: Record<SpeechError, string> = {
   other: "Não foi possível usar o microfone agora.",
 }
 
-const circleButton =
-  "flex size-12 shrink-0 items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-5"
+const barButton =
+  "flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 [&_svg]:size-5"
 
 export function ComposerBar() {
   const openCreate = useTaskUi((s) => s.openCreate)
@@ -65,28 +65,37 @@ export function ComposerBar() {
           <ListeningPanel transcript={speech.transcript} onCancel={speech.cancel} />
         )}
 
-        <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-full border bg-card/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur-xl">
+        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border bg-card/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur-xl">
           <button
             type="button"
-            aria-label="Nova tarefa"
             onClick={() => openCreate()}
             disabled={listening}
-            className={cn(circleButton, "bg-muted text-foreground hover:bg-muted/70")}
+            className={cn(barButton, "bg-muted text-foreground hover:bg-muted/70")}
           >
             <PlusIcon />
+            Nova tarefa
           </button>
 
           <button
             type="button"
-            aria-label={listening ? "Parar de ouvir" : "Criar tarefa por voz"}
             onClick={onVoiceToggle}
             className={cn(
-              circleButton,
+              barButton,
               "bg-foreground text-background hover:bg-foreground/90",
               listening && "bg-brand text-white hover:bg-brand/90"
             )}
           >
-            {listening ? <SquareIcon className="fill-current !size-4" /> : <AudioLinesIcon />}
+            {listening ? (
+              <>
+                <SquareIcon className="fill-current !size-4" />
+                Parar
+              </>
+            ) : (
+              <>
+                <AudioLinesIcon />
+                Falar
+              </>
+            )}
           </button>
         </div>
       </div>
