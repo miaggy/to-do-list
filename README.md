@@ -26,12 +26,9 @@ Zustand, react-hook-form + zod, date-fns, vite-plugin-pwa.
 ## Barra inferior
 
 - **+** abre o formulário completo
-- **Segure para falar** grava enquanto pressionado; arraste para fora para cancelar
-- **Teclado/microfone** alterna entre voz e texto
-- **Onda sonora** toca para falar (para sozinho no silêncio)
+- **Áudio** começa a ouvir; para sozinho no silêncio ou com outro toque
 
-Voz abre o formulário pré-preenchido para confirmar; texto cria a tarefa direto
-(com "Editar" no aviso). Atalhos no desktop: `/` digita, `n` abre o formulário.
+A fala abre o formulário pré-preenchido para confirmar. Atalho no desktop: `n` abre o formulário.
 
 O reconhecimento de voz depende do navegador: funciona no Chrome, Edge e Safari;
 o Firefox não suporta.

@@ -63,7 +63,7 @@ export function TaskList() {
         <ListTodoIcon className="size-10 text-brand" aria-hidden />
         <h2 className="font-serif text-3xl tracking-tight">{greeting()}</h2>
         <p className="max-w-xs text-sm text-muted-foreground">
-          Segure o microfone e diga algo como{" "}
+          Toque no botão de áudio e diga algo como{" "}
           <span className="text-foreground">
             “Pagar a conta de luz amanhã às 10, prioridade alta”
           </span>
