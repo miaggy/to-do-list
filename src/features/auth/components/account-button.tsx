@@ -45,8 +45,12 @@ function StatusIcon({ status, signedIn }: { status: SyncStatus; signedIn: boolea
 
 function errorMessage(error: unknown) {
   const message = (error as Error)?.message ?? ""
+  // Limite por hora do serviço de e-mail do Supabase
+  if (/email rate limit/i.test(message))
+    return "Limite de e-mails por hora atingido. Use o último e-mail recebido ou tente mais tarde."
+  // Intervalo mínimo entre dois pedidos do mesmo e-mail
   if (/rate limit|security purposes/i.test(message))
-    return "Muitas tentativas. Aguarde um minuto e tente de novo."
+    return "Aguarde um minuto antes de pedir outro e-mail."
   if (/expired|invalid/i.test(message)) return "Código inválido ou expirado."
   return "Algo deu errado. Tente de novo."
 }
