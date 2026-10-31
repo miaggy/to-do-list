@@ -11,9 +11,9 @@
   },
   "observability": { "enabled": true },
   "vars": {
-    // Públicos (os mesmos do app). Preencha ao criar o projeto no Supabase.
-    "SUPABASE_URL": "",
-    "SUPABASE_ANON_KEY": "",
+    // Públicos (os mesmos do .env do app)
+    "SUPABASE_URL": "https://idwqgmplhodkkuhckhvs.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_nYP6uBcMWDk3U0qgJdcn0g_1bTl1LbA",
     "TRANSCRIBE_BASE_URL": "https://api.openai.com/v1",
     "TRANSCRIBE_MODEL": "gpt-4o-mini-transcribe"
   }
