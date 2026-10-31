@@ -53,7 +53,10 @@ export function FilterChips() {
 
 export function TaskList() {
   const filter = useTaskUi((s) => s.filter)
-  const tasks = useLiveQuery(() => db.tasks.toArray(), [])
+  const tasks = useLiveQuery(
+    () => db.tasks.filter((task) => !task.deletedAt).toArray(),
+    []
+  )
 
   if (!tasks) return null
 

@@ -1,0 +1,4 @@
+# Copie para .dev.vars para testar a API localmente com `npm run dev:worker`
+TRANSCRIBE_API_KEY=sua-chave
+# Libera a transcrição sem login (só em desenvolvimento)
+ALLOW_ANONYMOUS_TRANSCRIBE=true

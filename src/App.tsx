@@ -4,6 +4,7 @@ import { MoonIcon, SunIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Toaster } from "@/components/ui/sonner"
+import { AccountButton } from "@/features/auth/components/account-button"
 import { FilterChips, TaskList } from "@/features/tasks/components/task-list"
 import { TaskFormSheet } from "@/features/tasks/components/task-form-sheet"
 import { ComposerBar } from "@/features/voice/components/composer-bar"
@@ -35,7 +36,10 @@ export default function App() {
               <h1 className="font-serif text-3xl tracking-tight">Tarefas</h1>
               <p className="text-sm text-muted-foreground first-letter:uppercase">{today}</p>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <AccountButton />
+              <ThemeToggle />
+            </div>
           </div>
           <FilterChips />
         </div>

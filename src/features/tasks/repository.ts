@@ -1,8 +1,26 @@
+import { requestSync } from "../sync/sync-engine"
 import { db } from "./db"
 import type { Task, TaskDraft, TaskSource } from "./types"
 
 function now() {
   return new Date().toISOString()
+}
+
+/** Grava a tarefa e a coloca na fila de envio para a nuvem. */
+async function save(task: Task) {
+  await db.transaction("rw", db.tasks, db.outbox, async () => {
+    await db.tasks.put(task)
+    await db.outbox.put({ id: task.id, updatedAt: task.updatedAt })
+  })
+  requestSync()
+}
+
+async function change(id: string, changes: Partial<Task>) {
+  const task = await db.tasks.get(id)
+  if (!task) return undefined
+  const updated = { ...task, ...changes, updatedAt: now() }
+  await save(updated)
+  return updated
 }
 
 export async function createTask(draft: TaskDraft, source: TaskSource) {
@@ -16,37 +34,32 @@ export async function createTask(draft: TaskDraft, source: TaskSource) {
     completedAt: null,
     createdAt: timestamp,
     updatedAt: timestamp,
+    deletedAt: null,
     source,
   }
-  await db.tasks.add(task)
+  await save(task)
   return task
 }
 
 export async function updateTask(id: string, draft: TaskDraft) {
-  await db.tasks.update(id, {
+  await change(id, {
     ...draft,
     title: draft.title.trim(),
     description: draft.description.trim(),
-    updatedAt: now(),
   })
 }
 
 export async function setTaskCompleted(id: string, completed: boolean) {
-  const timestamp = now()
-  await db.tasks.update(id, {
-    completed,
-    completedAt: completed ? timestamp : null,
-    updatedAt: timestamp,
-  })
+  await change(id, { completed, completedAt: completed ? now() : null })
 }
 
 export async function deleteTask(id: string) {
   const task = await db.tasks.get(id)
-  await db.tasks.delete(id)
+  await change(id, { deletedAt: now() })
   return task
 }
 
 /** Restaura uma tarefa excluída (usado pelo "Desfazer"). */
 export async function restoreTask(task: Task) {
-  await db.tasks.put(task)
+  await save({ ...task, deletedAt: null, updatedAt: now() })
 }

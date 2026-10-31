@@ -39,7 +39,13 @@ function getRecognitionClass(): SpeechRecognitionConstructor | undefined {
 
 export type SpeechStatus = "idle" | "listening"
 
-export type SpeechError = "not-supported" | "not-allowed" | "no-speech" | "network" | "other"
+export type SpeechError =
+  | "not-supported"
+  | "not-allowed"
+  | "no-speech"
+  | "network"
+  | "unauthorized"
+  | "other"
 
 interface Options {
   lang?: string

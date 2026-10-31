@@ -30,7 +30,11 @@ export default defineConfig({
       },
     }),
   ],
+  // Em dev, a API (/api/*) vem do `wrangler dev` na porta 8787
+  server: {
+    proxy: { '/api': 'http://localhost:8787' },
+  },
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
 })

@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils"
 
 import { useTaskUi } from "../../tasks/store"
 import { parseTask } from "../parse-task"
-import { useSpeechRecognition, type SpeechError } from "../use-speech-recognition"
+import type { SpeechError } from "../use-speech-recognition"
+import { useVoiceInput } from "../use-voice-input"
 import { ListeningPanel } from "./listening-panel"
 
 const ERROR_MESSAGES: Record<SpeechError, string> = {
@@ -15,11 +16,9 @@ const ERROR_MESSAGES: Record<SpeechError, string> = {
   "not-allowed": "Permita o acesso ao microfone para criar tarefas por voz.",
   "no-speech": "Não ouvi nada. Tente de novo.",
   network: "Sem conexão com o serviço de voz. Verifique a internet.",
+  unauthorized: "Entre na sua conta para criar tarefas por voz neste aparelho.",
   other: "Não foi possível usar o microfone agora.",
 }
-
-// Abra o app com ?debug=voz para ver os eventos do reconhecimento na tela
-const DEBUG_VOICE = new URLSearchParams(window.location.search).get("debug") === "voz"
 
 const barButton =
   "flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 [&_svg]:size-5"
@@ -27,15 +26,15 @@ const barButton =
 export function ComposerBar() {
   const openCreate = useTaskUi((s) => s.openCreate)
 
-  const speech = useSpeechRecognition({
+  const speech = useVoiceInput({
     onFinal: (spoken) => {
       const { draft } = parseTask(spoken)
       openCreate({ draft, source: "voice", transcript: spoken })
     },
     onError: (error) => toast.error(ERROR_MESSAGES[error]),
-    debug: DEBUG_VOICE,
   })
   const listening = speech.status === "listening"
+  const busy = speech.status !== "idle"
 
   // Atalho no desktop: "n" abre o formulário completo
   useEffect(() => {
@@ -59,26 +58,31 @@ export function ComposerBar() {
       return
     }
     if (listening) speech.stop()
-    else speech.start()
+    else if (!busy) speech.start()
   }
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
-        {DEBUG_VOICE && speech.log.length > 0 && (
+        {speech.debug && speech.log.length > 0 && (
           <pre className="pointer-events-auto max-h-48 overflow-auto rounded-2xl border bg-card/95 p-3 font-mono text-[11px] leading-snug whitespace-pre-wrap text-muted-foreground select-text">
-            {speech.log.join("\n")}
+            {`motor: ${speech.engine}\n${speech.log.join("\n")}`}
           </pre>
         )}
-        {listening && (
-          <ListeningPanel transcript={speech.transcript} onCancel={speech.cancel} />
+        {speech.status !== "idle" && (
+          <ListeningPanel
+            status={speech.status}
+            transcript={speech.transcript}
+            level={speech.level}
+            onCancel={speech.cancel}
+          />
         )}
 
         <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border bg-card/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur-xl">
           <button
             type="button"
             onClick={() => openCreate()}
-            disabled={listening}
+            disabled={busy}
             className={cn(barButton, "bg-muted text-foreground hover:bg-muted/70")}
           >
             <PlusIcon />
@@ -88,6 +92,7 @@ export function ComposerBar() {
           <button
             type="button"
             onClick={onVoiceToggle}
+            disabled={speech.status === "transcribing"}
             className={cn(
               barButton,
               "bg-foreground text-background hover:bg-foreground/90",

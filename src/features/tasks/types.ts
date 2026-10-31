@@ -17,6 +17,8 @@ export interface Task {
   completedAt: string | null
   createdAt: string
   updatedAt: string
+  /** Exclusão suave: a remoção precisa chegar aos outros aparelhos. */
+  deletedAt: string | null
   source: TaskSource
 }
 
