@@ -16,7 +16,7 @@ const ERROR_MESSAGES: Record<SpeechError, string> = {
   "not-allowed": "Permita o acesso ao microfone para criar tarefas por voz.",
   "no-speech": "Não ouvi nada. Tente de novo.",
   network: "Sem conexão com o serviço de voz. Verifique a internet.",
-  unauthorized: "Entre na sua conta para criar tarefas por voz neste aparelho.",
+  unauthorized: "Ative a sincronização neste aparelho (botão no topo) para usar a voz.",
   other: "Não foi possível usar o microfone agora.",
 }
 

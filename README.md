@@ -18,7 +18,7 @@ crie `.env.local` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
 - **App**: Vite + React + TypeScript, Tailwind v4 + shadcn/ui, PWA
 - **Dados**: local-first no IndexedDB (Dexie), sincronizados com o **Supabase**
-  (Postgres + login por e-mail + tempo real). Funciona offline; as mudanças vão
+  (Postgres + tempo real). Funciona offline; as mudanças vão
   para uma fila e sobem quando a conexão volta. Em conflito vence a edição mais recente.
 - **Hospedagem**: **Cloudflare Workers** serve o app e a API (`worker/index.ts`)
 - **Voz**: dois motores, escolhidos automaticamente
@@ -31,7 +31,7 @@ crie `.env.local` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 ```
 src/features/tasks/   modelo, Dexie, repositório, lista e formulário
 src/features/sync/    motor de sincronização com o Supabase (+ testes)
-src/features/auth/    login por e-mail (link mágico ou código)
+src/features/auth/    chave de sincronização (conta única do Supabase)
 src/features/voice/   barra inferior, motores de voz e parser pt-BR (parse-task.ts)
 worker/               Worker do Cloudflare (assets + /api)
 supabase/schema.sql   tabela, regras de acesso (RLS), trigger e tempo real
@@ -42,13 +42,13 @@ supabase/schema.sql   tabela, regras de acesso (RLS), trigger e tempo real
 ### 1. Supabase
 1. Crie um projeto em https://supabase.com (região São Paulo).
 2. **SQL Editor** → cole e rode `supabase/schema.sql`.
-3. **Authentication → URL Configuration**: em *Site URL* coloque a URL do app no
-   Cloudflare; em *Redirect URLs* adicione essa URL com `/**` no fim e `http://localhost:5173/**`.
-4. **Authentication → Emails → Magic Link**: inclua o código no texto, ex.
-   `Seu código: {{ .Token }}` — no iPhone com o app na tela inicial é mais fácil digitar o código.
-5. Copie a *Project URL* e a *anon/publishable key* (Project Settings → API) para
-   `.env.production` e para `vars` em `wrangler.jsonc`. Elas são públicas; a proteção
-   dos dados é feita pelas regras de acesso do banco.
+3. **Authentication → Users → Add user → Create new user**: e-mail `tarefas@example.com`
+   (ou outro, definido em `VITE_SYNC_EMAIL`), uma senha forte e **Auto Confirm User**
+   marcado. Essa senha é a **chave de sincronização**: digite-a uma vez em cada aparelho
+   (botão *Sincronizar* no topo); depois a sincronização é automática. Nenhum e-mail é enviado.
+4. Copie a *Project URL* e a *anon/publishable key* (Project Settings → API) para
+   `.env` e para `vars` em `wrangler.jsonc`. Elas são públicas; a proteção
+   dos dados é feita pelas regras de acesso do banco e pela chave.
 
 ### 2. Transcrição de voz
 Usa o Whisper do **Cloudflare Workers AI** (binding `AI` em `wrangler.jsonc`), sem

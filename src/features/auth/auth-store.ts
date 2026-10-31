@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js"
 import { create } from "zustand"
 
-import { supabase } from "@/lib/supabase"
+import { SYNC_EMAIL, supabase } from "@/lib/supabase"
 
 import { clearLocalData, startSync, stopSync, syncNow } from "../sync/sync-engine"
 
@@ -16,27 +16,18 @@ export const useAuth = create<AuthState>(() => ({
   user: null,
 }))
 
-function redirectUrl() {
-  return new URL(import.meta.env.BASE_URL, window.location.origin).toString()
-}
-
-/** Envia o e-mail com link mágico (e código, se o template incluir {{ .Token }}). */
-export async function sendLoginEmail(email: string) {
+/**
+ * Liga a sincronização neste aparelho. Todos os aparelhos entram na mesma conta
+ * do Supabase (e-mail fixo); a chave de sincronização é a senha dessa conta.
+ * Depois da primeira vez a sessão fica salva e renova sozinha.
+ */
+export async function connectWithKey(key: string) {
   if (!supabase) throw new Error("Supabase não configurado")
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: redirectUrl() },
-  })
+  const { error } = await supabase.auth.signInWithPassword({ email: SYNC_EMAIL, password: key })
   if (error) throw error
 }
 
-export async function verifyLoginCode(email: string, token: string) {
-  if (!supabase) throw new Error("Supabase não configurado")
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" })
-  if (error) throw error
-}
-
-export async function signOut() {
+export async function disconnect() {
   if (!supabase) return
   // Tenta mandar o que estiver pendente antes de limpar o aparelho
   await syncNow().catch(() => undefined)
