@@ -108,16 +108,6 @@ function compareByDue(a: Task, b: Task) {
   return a.createdAt < b.createdAt ? -1 : 1
 }
 
-/** Data decrescente (mais distante primeiro); sem data, cai para prioridade. */
-function compareByDueDesc(a: Task, b: Task) {
-  if (a.dueDate && b.dueDate) {
-    const aDue = `${a.dueDate}T${a.dueTime ?? "00:00"}`
-    const bDue = `${b.dueDate}T${b.dueTime ?? "00:00"}`
-    if (aDue !== bDue) return aDue < bDue ? 1 : -1
-  }
-  return compareTasks(a, b)
-}
-
 /** Concluídas, da mais recente para a mais antiga. */
 function completedGroups(tasks: Task[]): TaskGroup[] {
   const done = tasks
@@ -212,10 +202,8 @@ export function groupTasks(tasks: Task[], filter: TaskFilter): TaskGroup[] {
     .map((key) => buckets[key])
     .filter((group) => group.tasks.length > 0)
     .map((group) =>
-      // Em "Todas" a lista é do mais distante para o mais próximo
-      filter === "all"
-        ? { ...group, tasks: group.tasks.sort(compareByDueDesc) }
-        : sorted(group)
+      // Em "Todas" a lista segue a data, da mais próxima para a mais distante
+      filter === "all" ? { ...group, tasks: group.tasks.sort(compareByDue) } : sorted(group)
     )
 }
 
