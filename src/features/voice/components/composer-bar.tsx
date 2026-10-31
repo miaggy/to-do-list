@@ -95,7 +95,7 @@ export function ComposerBar() {
             disabled={speech.status === "transcribing"}
             className={cn(
               barButton,
-              "bg-foreground text-background hover:bg-foreground/90",
+              "bg-muted text-foreground hover:bg-muted/70",
               listening && "bg-brand text-white hover:bg-brand/90"
             )}
           >

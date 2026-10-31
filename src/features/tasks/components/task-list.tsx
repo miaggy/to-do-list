@@ -1,11 +1,18 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { ListTodoIcon } from "lucide-react"
+import { ArrowDownWideNarrowIcon, ListTodoIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
 import { db } from "../db"
-import { FILTERS, groupTasks } from "../selectors"
+import {
+  FILTERS,
+  PRIORITY_FILTERS,
+  groupTasks,
+  groupTasksByPriority,
+} from "../selectors"
 import { useTaskUi } from "../store"
+import { PRIORITY_META } from "../types"
+import { PriorityDot } from "./priority-badge"
 import { TaskItem } from "./task-item"
 
 function greeting() {
@@ -23,36 +30,77 @@ const EMPTY_MESSAGES = {
   done: "Nenhuma tarefa concluída ainda.",
 }
 
+const chipClass = (selected: boolean) =>
+  cn(
+    "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+    selected
+      ? "border-foreground bg-foreground text-background"
+      : "text-muted-foreground hover:text-foreground"
+  )
+
 export function FilterChips() {
+  const view = useTaskUi((s) => s.view)
+  const setView = useTaskUi((s) => s.setView)
   const filter = useTaskUi((s) => s.filter)
   const setFilter = useTaskUi((s) => s.setFilter)
+  const priorityFilter = useTaskUi((s) => s.priorityFilter)
+  const setPriorityFilter = useTaskUi((s) => s.setPriorityFilter)
+  const byPriority = view === "priority"
+
   return (
-    <div
-      role="tablist"
-      className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]"
-    >
-      {FILTERS.map((f) => (
-        <button
-          key={f.value}
-          role="tab"
-          aria-selected={filter === f.value}
-          onClick={() => setFilter(f.value)}
-          className={cn(
-            "shrink-0 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
-            filter === f.value
-              ? "border-foreground bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {f.label}
-        </button>
-      ))}
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        aria-pressed={byPriority}
+        aria-label="Ordenar por prioridade"
+        title="Ordenar por prioridade"
+        onClick={() => setView(byPriority ? "date" : "priority")}
+        className={cn(
+          "flex size-[34px] shrink-0 items-center justify-center rounded-full border transition-colors",
+          byPriority
+            ? "border-brand bg-brand/10 text-brand"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <ArrowDownWideNarrowIcon className="size-4" />
+      </button>
+      <div
+        role="tablist"
+        className="-mr-4 flex min-w-0 flex-1 gap-2 overflow-x-auto pr-4 [scrollbar-width:none]"
+      >
+        {byPriority
+          ? PRIORITY_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                role="tab"
+                aria-selected={priorityFilter === f.value}
+                onClick={() => setPriorityFilter(f.value)}
+                className={chipClass(priorityFilter === f.value)}
+              >
+                {f.value !== "all" && <PriorityDot priority={f.value} />}
+                {f.label}
+              </button>
+            ))
+          : FILTERS.map((f) => (
+              <button
+                key={f.value}
+                role="tab"
+                aria-selected={filter === f.value}
+                onClick={() => setFilter(f.value)}
+                className={chipClass(filter === f.value)}
+              >
+                {f.label}
+              </button>
+            ))}
+      </div>
     </div>
   )
 }
 
 export function TaskList() {
+  const view = useTaskUi((s) => s.view)
   const filter = useTaskUi((s) => s.filter)
+  const priorityFilter = useTaskUi((s) => s.priorityFilter)
   const tasks = useLiveQuery(
     () => db.tasks.filter((task) => !task.deletedAt).toArray(),
     []
@@ -76,14 +124,18 @@ export function TaskList() {
     )
   }
 
-  const groups = groupTasks(tasks, filter)
+  const byPriority = view === "priority"
+  const groups = byPriority
+    ? groupTasksByPriority(tasks, priorityFilter)
+    : groupTasks(tasks, filter)
 
   if (groups.length === 0) {
-    return (
-      <p className="py-16 text-center text-sm text-muted-foreground">
-        {EMPTY_MESSAGES[filter]}
-      </p>
-    )
+    const message = !byPriority
+      ? EMPTY_MESSAGES[filter]
+      : priorityFilter === "all"
+        ? EMPTY_MESSAGES.all
+        : `Nenhuma tarefa pendente com prioridade ${PRIORITY_META[priorityFilter].label.toLowerCase()}.`
+    return <p className="py-16 text-center text-sm text-muted-foreground">{message}</p>
   }
 
   return (
@@ -97,6 +149,7 @@ export function TaskList() {
               group.key === "overdue" && "text-destructive"
             )}
           >
+            {group.priority && <PriorityDot priority={group.priority} className="self-center" />}
             {group.label}
             <span className="tabular-nums opacity-70">{group.tasks.length}</span>
           </h2>

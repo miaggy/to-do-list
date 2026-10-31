@@ -8,7 +8,7 @@ import {
 } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
-import { PRIORITY_META, type Task } from "./types"
+import { PRIORITIES, PRIORITY_META, type Priority, type Task } from "./types"
 
 export type TaskFilter = "all" | "today" | "upcoming" | "done"
 
@@ -17,6 +17,18 @@ export const FILTERS: { value: TaskFilter; label: string }[] = [
   { value: "today", label: "Hoje" },
   { value: "upcoming", label: "Próximas" },
   { value: "done", label: "Concluídas" },
+]
+
+export type ViewMode = "date" | "priority"
+
+export type PriorityFilter = "all" | Exclude<Priority, "none">
+
+export const PRIORITY_FILTERS: { value: PriorityFilter; label: string }[] = [
+  { value: "all", label: "Todas" },
+  { value: "urgent", label: "Urgente" },
+  { value: "high", label: "Alta" },
+  { value: "medium", label: "Média" },
+  { value: "low", label: "Baixa" },
 ]
 
 export function toDateKey(date: Date) {
@@ -66,6 +78,8 @@ function compareTasks(a: Task, b: Task) {
 export interface TaskGroup {
   key: string
   label: string
+  /** Só nos grupos do modo prioridade. */
+  priority?: Priority
   tasks: Task[]
 }
 
@@ -107,4 +121,19 @@ export function groupTasks(tasks: Task[], filter: TaskFilter): TaskGroup[] {
     .map((key) => buckets[key])
     .filter((group) => group.tasks.length > 0)
     .map((group) => ({ ...group, tasks: group.tasks.sort(compareTasks) }))
+}
+
+/** Pendentes agrupadas da prioridade mais alta para a mais baixa. */
+export function groupTasksByPriority(tasks: Task[], filter: PriorityFilter): TaskGroup[] {
+  const pending = tasks.filter((task) => !task.completed)
+  return [...PRIORITIES]
+    .sort((a, b) => PRIORITY_META[b].rank - PRIORITY_META[a].rank)
+    .filter((priority) => filter === "all" || priority === filter)
+    .map((priority) => ({
+      key: `priority-${priority}`,
+      label: priority === "none" ? "Sem prioridade" : PRIORITY_META[priority].label,
+      priority,
+      tasks: pending.filter((task) => task.priority === priority).sort(compareTasks),
+    }))
+    .filter((group) => group.tasks.length > 0)
 }
