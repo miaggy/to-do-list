@@ -1,13 +1,14 @@
 /**
  * Worker do Cloudflare: serve o app (assets estáticos) e a API em /api/*.
  *
- * /api/transcribe recebe o áudio gravado no navegador e repassa para um serviço
- * de transcrição compatível com a API da OpenAI (OpenAI, Groq…). A chave fica
- * só aqui, como secret do Worker.
+ * /api/transcribe recebe o áudio gravado no navegador e transcreve com o
+ * Whisper do Cloudflare Workers AI (sem chave). Se TRANSCRIBE_API_KEY estiver
+ * definida, usa um serviço compatível com a API da OpenAI (OpenAI, Groq…).
  */
 
 interface Env {
   ASSETS: Fetcher
+  AI?: Ai
   SUPABASE_URL?: string
   SUPABASE_ANON_KEY?: string
   TRANSCRIBE_API_KEY?: string
@@ -39,15 +40,26 @@ async function isAuthorized(request: Request, env: Env) {
   return response.ok
 }
 
-async function transcribe(request: Request, env: Env) {
-  if (!env.TRANSCRIBE_API_KEY) return json({ error: "not-configured" }, 503)
-  if (!(await isAuthorized(request, env))) return json({ error: "unauthorized" }, 401)
+function toBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer)
+  let binary = ""
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  }
+  return btoa(binary)
+}
 
-  const form = await request.formData()
-  const audio = form.get("audio")
-  if (!(audio instanceof File) || audio.size === 0) return json({ error: "no-audio" }, 400)
-  if (audio.size > MAX_AUDIO_BYTES) return json({ error: "too-large" }, 413)
+async function transcribeWithWorkersAi(ai: Ai, audio: File) {
+  const result = (await ai.run("@cf/openai/whisper-large-v3-turbo", {
+    audio: toBase64(await audio.arrayBuffer()),
+    language: "pt",
+    initial_prompt: PROMPT,
+    vad_filter: true,
+  })) as { text?: string }
+  return (result.text ?? "").trim()
+}
 
+async function transcribeWithOpenAiCompatible(env: Env, audio: File) {
   const upstream = new FormData()
   upstream.append("file", audio, audio.name || "audio.webm")
   upstream.append("model", env.TRANSCRIBE_MODEL || "gpt-4o-mini-transcribe")
@@ -62,11 +74,32 @@ async function transcribe(request: Request, env: Env) {
     body: upstream,
   })
   if (!response.ok) {
-    console.error("transcrição falhou", response.status, await response.text())
-    return json({ error: "upstream" }, 502)
+    throw new Error(`transcrição falhou: ${response.status} ${await response.text()}`)
   }
   const result = (await response.json()) as { text?: string }
-  return json({ text: (result.text ?? "").trim() })
+  return (result.text ?? "").trim()
+}
+
+const canTranscribe = (env: Env) => !!env.TRANSCRIBE_API_KEY || !!env.AI
+
+async function transcribe(request: Request, env: Env) {
+  if (!canTranscribe(env)) return json({ error: "not-configured" }, 503)
+  if (!(await isAuthorized(request, env))) return json({ error: "unauthorized" }, 401)
+
+  const form = await request.formData()
+  const audio = form.get("audio")
+  if (!(audio instanceof File) || audio.size === 0) return json({ error: "no-audio" }, 400)
+  if (audio.size > MAX_AUDIO_BYTES) return json({ error: "too-large" }, 413)
+
+  try {
+    const text = env.TRANSCRIBE_API_KEY
+      ? await transcribeWithOpenAiCompatible(env, audio)
+      : await transcribeWithWorkersAi(env.AI!, audio)
+    return json({ text })
+  } catch (error) {
+    console.error("transcrição falhou", audio.type, audio.size, error)
+    return json({ error: "upstream" }, 502)
+  }
 }
 
 export default {
@@ -74,7 +107,7 @@ export default {
     const url = new URL(request.url)
 
     if (url.pathname === "/api/health") {
-      return json({ transcribe: !!env.TRANSCRIBE_API_KEY })
+      return json({ transcribe: canTranscribe(env) })
     }
     if (url.pathname === "/api/transcribe" && request.method === "POST") {
       return transcribe(request, env)

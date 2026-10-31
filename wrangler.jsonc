@@ -10,6 +10,8 @@
     "run_worker_first": ["/api/*"]
   },
   "observability": { "enabled": true },
+  // Whisper do Workers AI para transcrever a voz (sem chave)
+  "ai": { "binding": "AI" },
   "vars": {
     // Públicos (os mesmos do .env do app)
     "SUPABASE_URL": "https://idwqgmplhodkkuhckhvs.supabase.co",
@@ -17,5 +19,6 @@
     "TRANSCRIBE_BASE_URL": "https://api.openai.com/v1",
     "TRANSCRIBE_MODEL": "gpt-4o-mini-transcribe"
   }
-  // Secret (não fica no código): npx wrangler secret put TRANSCRIBE_API_KEY
+  // Opcional, para usar OpenAI/Groq no lugar do Workers AI:
+  // npx wrangler secret put TRANSCRIBE_API_KEY
 }

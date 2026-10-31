@@ -23,8 +23,9 @@ crie `.env.local` com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 - **Hospedagem**: **Cloudflare Workers** serve o app e a API (`worker/index.ts`)
 - **Voz**: dois motores, escolhidos automaticamente
   - *navegador*: Web Speech API, com texto ao vivo (Chrome/Edge no desktop e Android)
-  - *servidor*: grava o áudio e transcreve em `/api/transcribe` (iPhone, Firefox).
-    O Worker repassa para um serviço compatível com a API da OpenAI; a chave fica só lá.
+  - *servidor*: grava o áudio e transcreve em `/api/transcribe` (iPhone, Firefox),
+    com o Whisper do Cloudflare Workers AI (sem chave). Opcionalmente, um serviço
+    compatível com a API da OpenAI (secret `TRANSCRIBE_API_KEY`).
   - `?voz=servidor` ou `?voz=navegador` força um motor; `?debug=voz` mostra os eventos
 
 ```
@@ -50,10 +51,10 @@ supabase/schema.sql   tabela, regras de acesso (RLS), trigger e tempo real
    dos dados é feita pelas regras de acesso do banco.
 
 ### 2. Transcrição de voz
-Gere uma chave de API (OpenAI, ou Groq trocando `TRANSCRIBE_BASE_URL` e
-`TRANSCRIBE_MODEL` em `wrangler.jsonc`) e cadastre como **secret** do Worker com o
-nome `TRANSCRIBE_API_KEY` (painel do Cloudflare → Worker → Settings → Variables and Secrets).
-Só usuários logados conseguem usar a transcrição.
+Usa o Whisper do **Cloudflare Workers AI** (binding `AI` em `wrangler.jsonc`), sem
+chave. Para usar OpenAI ou Groq no lugar, cadastre o secret `TRANSCRIBE_API_KEY` no
+Worker e ajuste `TRANSCRIBE_BASE_URL`/`TRANSCRIBE_MODEL`. Só usuários logados
+conseguem usar a transcrição.
 
 ### 3. Cloudflare
 **Workers & Pages → Create → Import a repository** → este repositório:
