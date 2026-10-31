@@ -24,6 +24,10 @@ create table if not exists public.tasks (
 create index if not exists tasks_user_server_updated_idx
   on public.tasks (user_id, server_updated_at);
 
+-- Acesso pela API só para usuários logados (não depende de "expose new tables")
+revoke all on public.tasks from anon;
+grant select, insert, update, delete on public.tasks to authenticated;
+
 -- Cada usuário só enxerga e altera as próprias tarefas
 alter table public.tasks enable row level security;
 
