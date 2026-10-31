@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { ArrowDownWideNarrowIcon, ListTodoIcon } from "lucide-react"
+import { CalendarIcon, ListTodoIcon, TriangleAlertIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -9,9 +9,11 @@ import {
   PRIORITY_FILTERS,
   groupTasks,
   groupTasksByPriority,
+  type PriorityFilter,
+  type TaskFilter,
 } from "../selectors"
 import { useTaskUi } from "../store"
-import { PRIORITY_META } from "../types"
+import { PRIORITY_META, type Priority } from "../types"
 import { PriorityDot } from "./priority-badge"
 import { TaskItem } from "./task-item"
 
@@ -23,11 +25,18 @@ function greeting() {
   return "Boa noite"
 }
 
-const EMPTY_MESSAGES = {
+const DATE_EMPTY: Record<TaskFilter, string> = {
   all: "Nenhuma tarefa pendente.",
   today: "Nada para hoje.",
-  upcoming: "Nada agendado para os próximos dias.",
-  done: "Nenhuma tarefa concluída ainda.",
+  tomorrow: "Nada para amanhã.",
+  week: "Nada agendado para esta semana.",
+}
+
+function priorityEmpty(filter: PriorityFilter) {
+  if (filter === "all") return "Nenhuma tarefa pendente."
+  if (filter === "done") return "Nenhuma tarefa concluída ainda."
+  if (filter === "none") return "Nenhuma tarefa pendente sem prioridade."
+  return `Nenhuma tarefa pendente com prioridade ${PRIORITY_META[filter as Priority].label.toLowerCase()}.`
 }
 
 const chipClass = (selected: boolean) =>
@@ -38,6 +47,11 @@ const chipClass = (selected: boolean) =>
       : "text-muted-foreground hover:text-foreground"
   )
 
+const VIEWS = [
+  { value: "date", label: "Listar por período", Icon: CalendarIcon },
+  { value: "priority", label: "Listar por prioridade", Icon: TriangleAlertIcon },
+] as const
+
 export function FilterChips() {
   const view = useTaskUi((s) => s.view)
   const setView = useTaskUi((s) => s.setView)
@@ -45,30 +59,35 @@ export function FilterChips() {
   const setFilter = useTaskUi((s) => s.setFilter)
   const priorityFilter = useTaskUi((s) => s.priorityFilter)
   const setPriorityFilter = useTaskUi((s) => s.setPriorityFilter)
-  const byPriority = view === "priority"
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
-        aria-pressed={byPriority}
-        aria-label="Ordenar por prioridade"
-        title="Ordenar por prioridade"
-        onClick={() => setView(byPriority ? "date" : "priority")}
-        className={cn(
-          "flex size-[34px] shrink-0 items-center justify-center rounded-full border transition-colors",
-          byPriority
-            ? "border-brand bg-brand/10 text-brand"
-            : "text-muted-foreground hover:text-foreground"
-        )}
-      >
-        <ArrowDownWideNarrowIcon className="size-4" />
-      </button>
+      <div role="radiogroup" aria-label="Tipo de lista" className="flex shrink-0 rounded-full border p-0.5">
+        {VIEWS.map(({ value, label, Icon }) => (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={view === value}
+            aria-label={label}
+            title={label}
+            onClick={() => setView(value)}
+            className={cn(
+              "flex size-[30px] items-center justify-center rounded-full transition-colors",
+              view === value
+                ? "bg-brand/15 text-brand"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Icon className="size-4" />
+          </button>
+        ))}
+      </div>
       <div
         role="tablist"
         className="-mr-4 flex min-w-0 flex-1 gap-2 overflow-x-auto pr-4 [scrollbar-width:none]"
       >
-        {byPriority
+        {view === "priority"
           ? PRIORITY_FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -77,7 +96,7 @@ export function FilterChips() {
                 onClick={() => setPriorityFilter(f.value)}
                 className={chipClass(priorityFilter === f.value)}
               >
-                {f.value !== "all" && <PriorityDot priority={f.value} />}
+                {f.value !== "all" && f.value !== "done" && <PriorityDot priority={f.value} />}
                 {f.label}
               </button>
             ))
@@ -130,11 +149,7 @@ export function TaskList() {
     : groupTasks(tasks, filter)
 
   if (groups.length === 0) {
-    const message = !byPriority
-      ? EMPTY_MESSAGES[filter]
-      : priorityFilter === "all"
-        ? EMPTY_MESSAGES.all
-        : `Nenhuma tarefa pendente com prioridade ${PRIORITY_META[priorityFilter].label.toLowerCase()}.`
+    const message = byPriority ? priorityEmpty(priorityFilter) : DATE_EMPTY[filter]
     return <p className="py-16 text-center text-sm text-muted-foreground">{message}</p>
   }
 

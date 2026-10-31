@@ -10,18 +10,20 @@ import { ptBR } from "date-fns/locale"
 
 import { PRIORITIES, PRIORITY_META, type Priority, type Task } from "./types"
 
-export type TaskFilter = "all" | "today" | "upcoming" | "done"
+export type ViewMode = "date" | "priority"
+
+/** Visão por período. */
+export type TaskFilter = "all" | "today" | "tomorrow" | "week"
 
 export const FILTERS: { value: TaskFilter; label: string }[] = [
   { value: "all", label: "Todas" },
   { value: "today", label: "Hoje" },
-  { value: "upcoming", label: "Próximas" },
-  { value: "done", label: "Concluídas" },
+  { value: "tomorrow", label: "Amanhã" },
+  { value: "week", label: "Semana" },
 ]
 
-export type ViewMode = "date" | "priority"
-
-export type PriorityFilter = "all" | Exclude<Priority, "none">
+/** Visão por prioridade. */
+export type PriorityFilter = "all" | Priority | "done"
 
 export const PRIORITY_FILTERS: { value: PriorityFilter; label: string }[] = [
   { value: "all", label: "Todas" },
@@ -29,6 +31,8 @@ export const PRIORITY_FILTERS: { value: PriorityFilter; label: string }[] = [
   { value: "high", label: "Alta" },
   { value: "medium", label: "Média" },
   { value: "low", label: "Baixa" },
+  { value: "none", label: "Sem prioridade" },
+  { value: "done", label: "Concluídas" },
 ]
 
 export function toDateKey(date: Date) {
@@ -83,28 +87,54 @@ export interface TaskGroup {
   tasks: Task[]
 }
 
-export function groupTasks(tasks: Task[], filter: TaskFilter): TaskGroup[] {
-  if (filter === "done") {
-    const done = tasks
-      .filter((t) => t.completed)
-      .sort((a, b) => ((a.completedAt ?? "") < (b.completedAt ?? "") ? 1 : -1))
-    return done.length ? [{ key: "done", label: "Concluídas", tasks: done }] : []
-  }
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
 
+function dayLabel(dateKey: string, today: string, tomorrow: string) {
+  if (dateKey === today) return "Hoje"
+  if (dateKey === tomorrow) return "Amanhã"
+  return capitalize(format(parseISO(dateKey), "EEEE, d MMM", { locale: ptBR }))
+}
+
+/** Pendentes agrupadas por período. */
+export function groupTasks(tasks: Task[], filter: TaskFilter): TaskGroup[] {
   const today = todayKey()
   const tomorrow = toDateKey(addDays(new Date(), 1))
+  const pending = tasks.filter((task) => !task.completed)
+  const sorted = (group: TaskGroup) => ({ ...group, tasks: group.tasks.sort(compareTasks) })
+  const overdue: TaskGroup = {
+    key: "overdue",
+    label: "Atrasadas",
+    tasks: pending.filter(isOverdue),
+  }
+  const notOverdue = pending.filter((task) => !isOverdue(task))
+
+  if (filter === "week") {
+    // Hoje e os 6 dias seguintes, um grupo por dia
+    const weekEnd = toDateKey(addDays(new Date(), 6))
+    const byDay = new Map<string, Task[]>()
+    for (const task of notOverdue) {
+      if (!task.dueDate || task.dueDate > weekEnd) continue
+      byDay.set(task.dueDate, [...(byDay.get(task.dueDate) ?? []), task])
+    }
+    const days = [...byDay.keys()].sort().map<TaskGroup>((key) => ({
+      key: `day-${key}`,
+      label: dayLabel(key, today, tomorrow),
+      tasks: byDay.get(key)!,
+    }))
+    return [overdue, ...days].filter((group) => group.tasks.length > 0).map(sorted)
+  }
+
   const buckets: Record<string, TaskGroup> = {
-    overdue: { key: "overdue", label: "Atrasadas", tasks: [] },
+    overdue,
     today: { key: "today", label: "Hoje", tasks: [] },
     tomorrow: { key: "tomorrow", label: "Amanhã", tasks: [] },
     later: { key: "later", label: "Próximas", tasks: [] },
     someday: { key: "someday", label: "Sem data", tasks: [] },
   }
-
-  for (const task of tasks) {
-    if (task.completed) continue
-    if (isOverdue(task)) buckets.overdue.tasks.push(task)
-    else if (!task.dueDate) buckets.someday.tasks.push(task)
+  for (const task of notOverdue) {
+    if (!task.dueDate) buckets.someday.tasks.push(task)
     else if (task.dueDate === today) buckets.today.tasks.push(task)
     else if (task.dueDate === tomorrow) buckets.tomorrow.tasks.push(task)
     else buckets.later.tasks.push(task)
@@ -113,18 +143,25 @@ export function groupTasks(tasks: Task[], filter: TaskFilter): TaskGroup[] {
   const keys =
     filter === "today"
       ? ["overdue", "today"]
-      : filter === "upcoming"
-        ? ["tomorrow", "later"]
+      : filter === "tomorrow"
+        ? ["tomorrow"]
         : ["overdue", "today", "tomorrow", "later", "someday"]
 
   return keys
     .map((key) => buckets[key])
     .filter((group) => group.tasks.length > 0)
-    .map((group) => ({ ...group, tasks: group.tasks.sort(compareTasks) }))
+    .map(sorted)
 }
 
-/** Pendentes agrupadas da prioridade mais alta para a mais baixa. */
+/** Pendentes da prioridade mais alta para a mais baixa; ou as concluídas. */
 export function groupTasksByPriority(tasks: Task[], filter: PriorityFilter): TaskGroup[] {
+  if (filter === "done") {
+    const done = tasks
+      .filter((task) => task.completed)
+      .sort((a, b) => ((a.completedAt ?? "") < (b.completedAt ?? "") ? 1 : -1))
+    return done.length ? [{ key: "done", label: "Concluídas", tasks: done }] : []
+  }
+
   const pending = tasks.filter((task) => !task.completed)
   return [...PRIORITIES]
     .sort((a, b) => PRIORITY_META[b].rank - PRIORITY_META[a].rank)
