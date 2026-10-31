@@ -50,7 +50,31 @@ const PRIORITY_WORDS: [RegExp, Priority][] = [
   [/^(urgente|m[áa]xima|muito alta|alt[íi]ssima)$/, "urgent"],
 ]
 
-const NUM = String.raw`\d{1,2}|${Object.keys(NUMBER_WORDS).join("|")}`
+const WORDS = Object.keys(NUMBER_WORDS).join("|")
+const NUM = String.raw`\d{1,2}|${WORDS}`
+
+/** Minutos falados depois da hora: "três e quinze", "oito e meia". */
+const MINUTE_WORDS: [string, number][] = [
+  ["cinquenta e cinco", 55], ["cinquenta", 50], ["quarenta e cinco", 45], ["quarenta", 40],
+  ["trinta e cinco", 35], ["trinta", 30], ["vinte e cinco", 25], ["vinte", 20],
+  ["quinze", 15], ["dez", 10], ["cinco", 5], ["meia", 30],
+]
+const MINUTE_RE = MINUTE_WORDS.map(([word]) => word).join("|")
+
+/** "às 10", "às 10h30", "às 14 horas e 30 minutos", "às oito e meia da noite"… */
+const TIME_RE = new RegExp(
+  String.raw`[\s,]+(?:[àa]s|[àa](?=\s+uma\b)|para as|pras|at[ée] as)\s+(?<hour>${NUM})(?:\s*(?::|h)\s*(?<min>\d{2}))?(?:\s*(?<unit>h(?:oras?)?|hrs?))?(?:\s+e\s+(?<extra>${MINUTE_RE}|\d{1,2})(?:\s+minutos?)?)?(?:\s+em ponto)?(?:\s+(?:da|de|pela)\s+(?<period>manh[ãa]|tarde|noite|madrugada))?(?=[\s,.]|$)`,
+  "i"
+)
+/** Sem "às": "amanhã 14h", "10:30". */
+const BARE_TIME_RE =
+  /[\s,]+(?<hour>\d{1,2})(?::(?<min>\d{2})|h(?:\s*(?<min2>\d{2}))?)(?:\s+(?:da|de|pela)\s+(?<period>manh[ãa]|tarde|noite|madrugada))?(?=[\s,.]|$)/i
+/** Hora por extenso ("às sete") só vale se o que vem depois parecer fim de hora. */
+const WORD_HOUR_END_RE =
+  /^\s*(?:$|[,.;]|(?:amanh|hoje|depois|segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo|dia\b|prioridade|descri|detalhes|obs))/i
+
+/** Horário assumido quando só se diz o período do dia. */
+const DAY_PERIOD_TIME: Record<string, string> = { manha: "09:00", tarde: "15:00", noite: "20:00" }
 const MONTH = Object.keys(MONTHS).join("|")
 
 function toNumber(value: string) {
@@ -114,35 +138,75 @@ export function parseTask(input: string, now = new Date()): ParsedTask {
     found.description = true
   }
 
-  // 4. Hora: "às 10", "as 10h30", "10:30", "às 3 da tarde", "meio-dia"
-  // Números por extenso só contam como hora com "horas" ou "da tarde" etc.,
-  // para não confundir "ligar às duas clientes" com 2h.
-  const timeMatch =
-    take(/[\s,]+(?:[àa]s|para as|pras|at[ée] as)\s+(\d{1,2})(?:\s*(?::|h)\s*(\d{2}))?\s*(?:h(?:oras?)?|hrs?)?(?:\s+e\s+(meia|\d{2}))?(?:\s+(?:da|de)\s+(manh[ãa]|tarde|noite|madrugada))?(?=[\s,.]|$)/i) ??
-    take(new RegExp(String.raw`[\s,]+(?:[àa]s|para as|pras|at[ée] as)\s+(${NUM})(?:\s+horas?)?()(?:\s+e\s+(meia))?(?:\s+(?:da|de)\s+(manh[ãa]|tarde|noite|madrugada))(?=[\s,.]|$)`, "i")) ??
-    take(new RegExp(String.raw`[\s,]+(?:[àa]s|para as|pras|at[ée] as)\s+(${NUM})\s+horas?()(?:\s+e\s+(meia))?()(?=[\s,.]|$)`, "i")) ??
-    take(/[\s,]+(\d{1,2})(?::|h)(\d{2})?(?:\s+(?:da|de)\s+(manh[ãa]|tarde|noite))?(?=[\s,.]|$)/i)
-  const noonMatch = !timeMatch && take(/[\s,]+(?:ao|[àa]s?)?\s*(meio[- ]dia|meia[- ]noite)(?=[\s,.]|$)/i)
-  if (timeMatch) {
-    const isFirstForm = timeMatch.length > 4
-    let hour = toNumber(timeMatch[1])
-    let minute = Number(timeMatch[2] ?? 0)
-    const extra = isFirstForm ? timeMatch[3] : undefined
-    const period = (isFirstForm ? timeMatch[4] : timeMatch[3])?.toLowerCase()
-    if (extra) minute = extra === "meia" ? 30 : Number(extra)
-    if (period && /tarde|noite/.test(period) && hour < 12) hour += 12
-    if (hour <= 23 && minute <= 59) {
-      dueTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+  // 4. Hora
+  // Daqui a pouco: "daqui a 2 horas", "em 30 minutos", "daqui a meia hora"
+  const relTime = take(
+    new RegExp(
+      String.raw`[\s,]+(?:daqui a|dentro de|em)\s+(?:(meia)\s+hora|(\d{1,3}|${WORDS})\s+(horas?|minutos?)(?:\s+e\s+(meia))?)(?=[\s,.]|$)`,
+      "i"
+    )
+  )
+  if (relTime) {
+    const minutes = relTime[1]
+      ? 30
+      : toNumber(relTime[2]) * (/^h/i.test(relTime[3]) ? 60 : 1) + (relTime[4] ? 30 : 0)
+    const at = new Date(now.getTime() + minutes * 60_000)
+    dueDate = startOfDay(at)
+    dueTime = format(at, "HH:mm")
+    found.time = true
+  }
+
+  if (!relTime) {
+    const withPrefix = text.match(TIME_RE)
+    const bare = withPrefix ? null : text.match(BARE_TIME_RE)
+    const match = withPrefix ?? bare
+    if (match?.groups) {
+      const { hour: hourRaw, min, min2, unit, extra, period } = match.groups
+      const rest = text.slice(match.index! + match[0].length)
+      // "ligar às duas clientes" não é hora; "às sete amanhã" é
+      const spoken = !/^\d/.test(hourRaw)
+      if (!spoken || unit || extra || period || WORD_HOUR_END_RE.test(rest)) {
+        let hour = toNumber(hourRaw)
+        let minute = Number(min ?? min2 ?? 0)
+        if (extra) {
+          minute = /^\d/.test(extra)
+            ? Number(extra)
+            : (MINUTE_WORDS.find(([word]) => word === extra.toLowerCase())?.[1] ?? 0)
+        }
+        const day = stripAccents(period?.toLowerCase() ?? "")
+        if ((day === "tarde" || day === "noite") && hour < 12) hour += 12
+        if (day === "madrugada" && hour === 12) hour = 0
+        if (hour <= 23 && minute <= 59) {
+          dueTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+          found.time = true
+          text = text.replace(match[0], " ")
+        }
+      }
+    }
+  }
+
+  if (!dueTime) {
+    const noon = take(/[\s,]+(?:ao|[àa]s?)?\s*(meio[- ]dia|meia[- ]noite)(?=[\s,.]|$)/i)
+    if (noon) {
+      dueTime = /meio/i.test(noon[1]) ? "12:00" : "00:00"
       found.time = true
     }
-  } else if (noonMatch) {
-    dueTime = /meio/i.test(noonMatch[1]) ? "12:00" : "00:00"
-    found.time = true
+  }
+
+  // Só o período do dia: "amanhã de manhã", "hoje à noite"
+  if (!dueTime) {
+    const dayPeriod = take(/[\s,]+(?:de|pela|na|da|[àa])\s+(manh[ãa]|tarde|noite)(?=[\s,.]|$)/i)
+    if (dayPeriod) {
+      dueTime = DAY_PERIOD_TIME[stripAccents(dayPeriod[1].toLowerCase())]
+      found.time = true
+    }
   }
 
   // 5. Data
   const today = startOfDay(now)
-  const relative = take(/[\s,]+(?:para\s+|pra\s+|at[ée]\s+)?(depois de amanh[ãa]|amanh[ãa]|hoje)(?:\s+[àa]\s+(?:noite|tarde))?(?=[\s,.]|$)/i)
+  const relative = dueDate
+    ? null
+    : take(/[\s,]+(?:para\s+|pra\s+|at[ée]\s+|de\s+)?(depois de amanh[ãa]|amanh[ãa]|hoje)(?=[\s,.]|$)/i)
   if (relative) {
     const word = stripAccents(relative[1].toLowerCase())
     dueDate = addDays(today, word.startsWith("depois") ? 2 : word === "amanha" ? 1 : 0)

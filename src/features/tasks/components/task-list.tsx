@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { CalendarIcon, ListTodoIcon, TriangleAlertIcon } from "lucide-react"
+import { CalendarIcon, ListTodoIcon, SirenIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -30,6 +30,8 @@ const DATE_EMPTY: Record<TaskFilter, string> = {
   today: "Nada para hoje.",
   tomorrow: "Nada para amanhã.",
   week: "Nada agendado para esta semana.",
+  month: "Nada agendado para os próximos 30 dias.",
+  done: "Nenhuma tarefa concluída ainda.",
 }
 
 function priorityEmpty(filter: PriorityFilter) {
@@ -49,7 +51,7 @@ const chipClass = (selected: boolean) =>
 
 const VIEWS = [
   { value: "date", label: "Listar por período", Icon: CalendarIcon },
-  { value: "priority", label: "Listar por prioridade", Icon: TriangleAlertIcon },
+  { value: "priority", label: "Listar por prioridade", Icon: SirenIcon },
 ] as const
 
 export function FilterChips() {
