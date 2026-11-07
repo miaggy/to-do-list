@@ -13,18 +13,20 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'icon-180.png'],
       manifest: {
         name: 'Tarefas',
         short_name: 'Tarefas',
         description: 'Lista de tarefas com criação por voz',
         lang: 'pt-BR',
-        theme_color: '#1c1b1a',
+        theme_color: '#1d4ed8',
         background_color: '#1c1b1a',
         display: 'standalone',
         start_url: '.',
         scope: '.',
         icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
         ],
       },
