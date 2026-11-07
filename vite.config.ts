@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon-180.png', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'icon-v2-180.png'],
       manifest: {
         name: 'Tarefas',
         short_name: 'Tarefas',
@@ -25,9 +25,9 @@ export default defineConfig({
         start_url: '.',
         scope: '.',
         icons: [
-          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icon-v2-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icon-v2-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon-v2-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),
