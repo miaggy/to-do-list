@@ -33,7 +33,7 @@ export default function App() {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 pt-4 pb-3">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-[34px] leading-tight font-bold tracking-tight">Tarefas</h1>
+              <h1 className="text-[34px] leading-tight font-semibold tracking-tight">Tarefas</h1>
               <p className="text-sm text-muted-foreground first-letter:uppercase">{today}</p>
             </div>
             <div className="flex items-center gap-2">

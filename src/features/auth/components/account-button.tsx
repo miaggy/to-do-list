@@ -155,7 +155,7 @@ export function AccountButton() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold tracking-tight">{connected ? "Sincronização" : "Sincronizar tarefas"}</DialogTitle>
+            <DialogTitle className="text-2xl font-semibold tracking-tight">{connected ? "Sincronização" : "Sincronizar tarefas"}</DialogTitle>
             <DialogDescription>
               {connected
                 ? "Suas tarefas ficam salvas na nuvem e iguais em todos os aparelhos."

@@ -139,7 +139,7 @@ export function TaskList() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
         <ListTodoIcon className="size-10 text-brand" aria-hidden />
-        <h2 className="text-3xl font-bold tracking-tight">{greeting()}</h2>
+        <h2 className="text-3xl font-semibold tracking-tight">{greeting()}</h2>
         <p className="max-w-xs text-sm text-muted-foreground">
           Toque no botão de áudio e diga algo como{" "}
           <span className="text-foreground">
@@ -177,7 +177,7 @@ export function TaskList() {
             <h2
               id={`group-${group.key}`}
               className={cn(
-                "mb-2 flex items-center gap-2 px-1 text-lg leading-none font-bold tracking-tight",
+                "mb-2 flex items-center gap-2 px-1 text-lg leading-none font-semibold tracking-tight",
                 group.key === "overdue" && "text-destructive",
               )}
             >

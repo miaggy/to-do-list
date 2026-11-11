@@ -87,7 +87,7 @@ export function TaskFormSheet() {
       <Dialog open={open} onOpenChange={(o) => !o && closeForm()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold tracking-tight">{title}</DialogTitle>
+            <DialogTitle className="text-2xl font-semibold tracking-tight">{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
           {body}
