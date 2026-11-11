@@ -52,6 +52,7 @@ describe("visão por período", () => {
       "Amanhã: amanhã",
       "Quarta-feira, 4 nov: quarta",
       "Sexta-feira, 6 nov: dia 6",
+      "Concluídas: feita",
     ])
   })
 
@@ -61,6 +62,7 @@ describe("visão por período", () => {
       "Esta semana: hoje, amanhã, quarta, dia 6",
       "Semana que vem: dia 9",
       "14 nov a 20 nov: dia 20",
+      "Concluídas: feita",
     ])
   })
 
@@ -71,16 +73,13 @@ describe("visão por período", () => {
       "Amanhã: amanhã",
       "Próximas: dia 30, dia 20, dia 9, dia 6, quarta",
       "Sem data: sem data",
+      "Concluídas: feita",
     ])
   })
 
-  it("concluídas: só as feitas", () => {
-    expect(summary(groupTasks(tasks, "done"))).toEqual(["Concluídas: feita"])
-  })
-
   it("hoje e amanhã", () => {
-    expect(summary(groupTasks(tasks, "today"))).toEqual(["Atrasadas: atrasada", "Hoje: hoje"])
-    expect(summary(groupTasks(tasks, "tomorrow"))).toEqual(["Amanhã: amanhã"])
+    expect(summary(groupTasks(tasks, "today"))).toEqual(["Atrasadas: atrasada", "Hoje: hoje", "Concluídas: feita"])
+    expect(summary(groupTasks(tasks, "tomorrow"))).toEqual(["Amanhã: amanhã", "Concluídas: feita"])
   })
 })
 
@@ -97,11 +96,12 @@ describe("visão por prioridade", () => {
       "Urgente: b",
       "Baixa: a",
       "Sem prioridade: c",
+      "Concluídas: d",
     ])
   })
 
-  it("filtra por sem prioridade e por concluídas", () => {
+  it("filtra por sem prioridade (concluídas também respeitam o filtro)", () => {
     expect(summary(groupTasksByPriority(list, "none"))).toEqual(["Sem prioridade: c"])
-    expect(summary(groupTasksByPriority(list, "done"))).toEqual(["Concluídas: d"])
+    expect(summary(groupTasksByPriority(list, "urgent"))).toEqual(["Urgente: b", "Concluídas: d"])
   })
 })

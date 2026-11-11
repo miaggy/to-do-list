@@ -13,7 +13,7 @@ import { PRIORITIES, PRIORITY_META, type Priority, type Task } from "./types"
 export type ViewMode = "date" | "priority"
 
 /** Visão por período. */
-export type TaskFilter = "all" | "today" | "tomorrow" | "week" | "month" | "done"
+export type TaskFilter = "all" | "today" | "tomorrow" | "week" | "month"
 
 export const FILTERS: { value: TaskFilter; label: string }[] = [
   { value: "all", label: "Todas" },
@@ -21,11 +21,10 @@ export const FILTERS: { value: TaskFilter; label: string }[] = [
   { value: "tomorrow", label: "Amanhã" },
   { value: "week", label: "Semana" },
   { value: "month", label: "Mês" },
-  { value: "done", label: "Concluídas" },
 ]
 
 /** Visão por prioridade. */
-export type PriorityFilter = "all" | Priority | "done"
+export type PriorityFilter = "all" | Priority
 
 export const PRIORITY_FILTERS: { value: PriorityFilter; label: string }[] = [
   { value: "all", label: "Todas" },
@@ -34,7 +33,6 @@ export const PRIORITY_FILTERS: { value: PriorityFilter; label: string }[] = [
   { value: "medium", label: "Média" },
   { value: "low", label: "Baixa" },
   { value: "none", label: "Sem prioridade" },
-  { value: "done", label: "Concluídas" },
 ]
 
 export function toDateKey(date: Date) {
@@ -126,10 +124,12 @@ function completedGroups(tasks: Task[]): TaskGroup[] {
   return done.length ? [{ key: "done", label: "Concluídas", tasks: done }] : []
 }
 
-/** Pendentes agrupadas por período. */
+/** Pendentes agrupadas por período, com as concluídas no final. */
 export function groupTasks(tasks: Task[], filter: TaskFilter): TaskGroup[] {
-  if (filter === "done") return completedGroups(tasks)
+  return [...groupPending(tasks, filter), ...completedGroups(tasks)]
+}
 
+function groupPending(tasks: Task[], filter: TaskFilter): TaskGroup[] {
   const today = todayKey()
   const tomorrow = toDateKey(addDays(new Date(), 1))
   const pending = tasks.filter((task) => !task.completed)
@@ -219,10 +219,13 @@ export function groupTasks(tasks: Task[], filter: TaskFilter): TaskGroup[] {
     )
 }
 
-/** Pendentes da prioridade mais alta para a mais baixa; ou as concluídas. */
+/** Pendentes da prioridade mais alta para a mais baixa, com as concluídas no final. */
 export function groupTasksByPriority(tasks: Task[], filter: PriorityFilter): TaskGroup[] {
-  if (filter === "done") return completedGroups(tasks)
+  const matches = (task: Task) => filter === "all" || task.priority === filter
+  return [...groupPendingByPriority(tasks, filter), ...completedGroups(tasks.filter(matches))]
+}
 
+function groupPendingByPriority(tasks: Task[], filter: PriorityFilter): TaskGroup[] {
   const pending = tasks.filter((task) => !task.completed)
   return [...PRIORITIES]
     .sort((a, b) => PRIORITY_META[b].rank - PRIORITY_META[a].rank)
