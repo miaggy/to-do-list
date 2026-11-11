@@ -44,8 +44,8 @@ const chipClass = (selected: boolean) =>
   cn(
     "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
     selected
-      ? "border-foreground bg-foreground text-background"
-      : "text-muted-foreground hover:text-foreground",
+      ? "border-brand bg-brand font-medium text-background"
+      : "bg-card text-muted-foreground hover:text-foreground",
   );
 
 const VIEWS = [
@@ -66,7 +66,7 @@ export function FilterChips() {
       <div
         role="radiogroup"
         aria-label="Tipo de lista"
-        className="flex shrink-0 rounded-full border p-0.5"
+        className="flex shrink-0 rounded-full border bg-card p-0.5"
       >
         {VIEWS.map(({ value, label, Icon }) => (
           <button
@@ -80,7 +80,7 @@ export function FilterChips() {
             className={cn(
               "flex size-[30px] items-center justify-center rounded-full transition-colors",
               view === value
-                ? "bg-brand/15 text-brand"
+                ? "bg-brand text-background"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -139,7 +139,7 @@ export function TaskList() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
         <ListTodoIcon className="size-10 text-brand" aria-hidden />
-        <h2 className="font-serif text-3xl tracking-tight">{greeting()}</h2>
+        <h2 className="text-3xl font-bold tracking-tight">{greeting()}</h2>
         <p className="max-w-xs text-sm text-muted-foreground">
           Toque no botão de áudio e diga algo como{" "}
           <span className="text-foreground">
@@ -168,7 +168,7 @@ export function TaskList() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {groups.map((group) => {
         const isDone = group.key === "done";
         const shown = isDone ? group.tasks.slice(0, doneVisible) : group.tasks;
@@ -177,7 +177,7 @@ export function TaskList() {
             <h2
               id={`group-${group.key}`}
               className={cn(
-                "mb-1 flex items-baseline gap-2 px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase",
+                "mb-2 flex items-center gap-2 px-1 text-lg leading-none font-bold tracking-tight",
                 group.key === "overdue" && "text-destructive",
               )}
             >
@@ -188,11 +188,11 @@ export function TaskList() {
                 />
               )}
               {group.label}
-              <span className="tabular-nums opacity-70">
+              <span className="num text-sm text-muted-foreground">
                 {group.tasks.length}
               </span>
             </h2>
-            <ul className="flex flex-col">
+            <ul className="flex flex-col divide-y overflow-hidden rounded-[22px] bg-card">
               {shown.map((task) => (
                 <TaskItem key={task.id} task={task} />
               ))}
@@ -201,7 +201,7 @@ export function TaskList() {
               <button
                 type="button"
                 onClick={() => setDoneVisible((n) => n + DONE_PAGE)}
-                className="mt-2 w-full rounded-lg py-2 text-sm text-muted-foreground hover:text-foreground"
+                className="mt-3 h-11 w-full rounded-full border bg-card text-sm font-medium transition-colors hover:bg-muted"
               >
                 Carregar mais ({group.tasks.length - shown.length})
               </button>

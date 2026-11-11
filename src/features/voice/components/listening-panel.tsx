@@ -25,7 +25,7 @@ export function ListeningPanel({ status, transcript, level, onCancel }: Listenin
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-auto animate-in fade-in slide-in-from-bottom-2 rounded-3xl border bg-card/95 p-4 shadow-lg backdrop-blur-xl duration-200"
+      className="pointer-events-auto animate-in fade-in slide-in-from-bottom-2 rounded-[28px] border bg-card/95 p-5 shadow-lg backdrop-blur-xl duration-200"
     >
       <div className="mb-2 flex items-center gap-3">
         {transcribing ? (

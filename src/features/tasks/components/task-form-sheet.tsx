@@ -15,6 +15,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
+import { useKeyboardViewport } from "@/hooks/use-keyboard-viewport"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 import { createTask, deleteTask, restoreTask, updateTask } from "../repository"
@@ -27,6 +28,7 @@ export function TaskFormSheet() {
   const currentForm = useTaskUi((s) => s.form)
   const closeForm = useTaskUi((s) => s.closeForm)
   const isDesktop = useMediaQuery("(min-width: 768px)")
+  const keyboard = useKeyboardViewport(currentForm.mode !== "closed" && !isDesktop)
 
   // Mantém o último conteúdo enquanto a animação de fechar acontece
   const [form, setForm] = useState(currentForm)
@@ -85,7 +87,7 @@ export function TaskFormSheet() {
       <Dialog open={open} onOpenChange={(o) => !o && closeForm()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold tracking-tight">{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
           {body}
@@ -96,12 +98,23 @@ export function TaskFormSheet() {
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && closeForm()} repositionInputs={false}>
-      <DrawerContent>
+      <DrawerContent
+        // Sobe junto com o teclado e nunca passa da área visível
+        style={{
+          bottom: keyboard.inset,
+          maxHeight: keyboard.height
+            ? Math.min(keyboard.height - 12, window.innerHeight * 0.92)
+            : undefined,
+        }}
+      >
         <DrawerHeader className="text-left">
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div
+          data-vaul-no-drag
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        >
           {body}
         </div>
       </DrawerContent>

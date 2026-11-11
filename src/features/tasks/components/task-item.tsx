@@ -37,7 +37,7 @@ export function TaskItem({ task }: { task: Task }) {
   }
 
   return (
-    <li className="group flex items-start gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/50">
+    <li className="group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50">
       <Checkbox
         checked={task.completed}
         onCheckedChange={(checked) => toggle(checked === true)}
@@ -50,7 +50,7 @@ export function TaskItem({ task }: { task: Task }) {
       <button
         type="button"
         onClick={() => openEdit(task)}
-        className="flex min-w-0 flex-1 flex-col items-start gap-1 text-left outline-none"
+        className="flex min-w-0 flex-1 flex-col items-start gap-0 text-left outline-none"
       >
         <span
           className={cn(
@@ -61,12 +61,12 @@ export function TaskItem({ task }: { task: Task }) {
           {task.title}
         </span>
         {task.description && (
-          <span className="line-clamp-2 text-sm text-muted-foreground">
+          <span className="line-clamp-1 text-sm text-muted-foreground">
             {task.description}
           </span>
         )}
         {(due || task.priority !== "none") && (
-          <span className="mt-0.5 flex flex-wrap items-center gap-2">
+          <span className="flex flex-wrap items-center gap-x-2.5">
             {due && (
               <span
                 className={cn(
@@ -74,7 +74,7 @@ export function TaskItem({ task }: { task: Task }) {
                   overdue && "text-destructive"
                 )}
               >
-                <CalendarIcon className="size-3.5" />
+                <CalendarIcon className="size-3" />
                 {due}
               </span>
             )}

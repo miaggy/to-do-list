@@ -94,7 +94,7 @@ export function TaskForm({
                   type="button"
                   variant="outline"
                   className={cn(
-                    "flex-1 justify-start font-normal",
+                    "flex-1 justify-start rounded-2xl border-transparent bg-muted px-4 font-normal hover:bg-muted/70",
                     !dueDate && "text-muted-foreground"
                   )}
                 >
@@ -148,7 +148,7 @@ export function TaskForm({
               <Input
                 id="dueTime"
                 type="time"
-                className="w-28"
+                className="w-28 px-3"
                 disabled={!dueDate}
                 value={field.value ?? ""}
                 onChange={(e) => field.onChange(e.target.value || null)}
@@ -167,7 +167,7 @@ export function TaskForm({
             <div
               role="radiogroup"
               aria-labelledby="priority-label"
-              className="grid grid-cols-5 gap-1 rounded-lg bg-muted p-1"
+              className="grid grid-cols-5 gap-1 rounded-2xl bg-muted p-1"
             >
               {PRIORITIES.map((priority) => {
                 const selected = field.value === priority
@@ -179,8 +179,8 @@ export function TaskForm({
                     aria-checked={selected}
                     onClick={() => field.onChange(priority)}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-md px-1 py-2 text-xs text-muted-foreground transition-colors",
-                      selected && "bg-background text-foreground shadow-sm"
+                      "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-xs text-muted-foreground transition-colors",
+                      selected && "bg-card font-semibold text-foreground shadow-sm"
                     )}
                   >
                     <PriorityDot priority={priority} />

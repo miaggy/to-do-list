@@ -30,10 +30,10 @@ export default function App() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-30 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 pt-4 pb-3">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 pt-4 pb-3">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="font-serif text-3xl tracking-tight">Tarefas</h1>
+              <h1 className="text-[34px] leading-tight font-bold tracking-tight">Tarefas</h1>
               <p className="text-sm text-muted-foreground first-letter:uppercase">{today}</p>
             </div>
             <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-1 pt-2 pb-32">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 pt-1 pb-28">
         <TaskList />
       </main>
 

@@ -21,7 +21,7 @@ const ERROR_MESSAGES: Record<SpeechError, string> = {
 }
 
 const barButton =
-  "flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 [&_svg]:size-5"
+  "flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 [&_svg]:size-5"
 
 export function ComposerBar() {
   const openCreate = useTaskUi((s) => s.openCreate)
@@ -78,12 +78,12 @@ export function ComposerBar() {
           />
         )}
 
-        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border bg-card/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur-xl">
+        <div className="pointer-events-auto flex items-center gap-1.5 rounded-[28px] border bg-card/95 p-2 shadow-sm backdrop-blur-xl">
           <button
             type="button"
             onClick={() => openCreate()}
             disabled={busy}
-            className={cn(barButton, "bg-muted text-foreground hover:bg-muted/70")}
+            className={cn(barButton, "bg-foreground text-background hover:bg-foreground/85")}
           >
             <PlusIcon />
             Nova tarefa
@@ -96,7 +96,7 @@ export function ComposerBar() {
             className={cn(
               barButton,
               "bg-muted text-foreground hover:bg-muted/70",
-              listening && "bg-brand text-white hover:bg-brand/90"
+              listening && "bg-brand text-background hover:bg-brand/90"
             )}
           >
             {listening ? (

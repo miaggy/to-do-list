@@ -99,7 +99,7 @@ function ConnectedDetails() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3 rounded-xl border p-3">
+      <div className="flex items-center gap-3 rounded-2xl bg-muted p-4">
         <StatusIcon status={status} connected />
         <div className="min-w-0">
           <p className="text-sm font-medium">Este aparelho está sincronizado</p>
@@ -155,7 +155,7 @@ export function AccountButton() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>{connected ? "Sincronização" : "Sincronizar tarefas"}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold tracking-tight">{connected ? "Sincronização" : "Sincronizar tarefas"}</DialogTitle>
             <DialogDescription>
               {connected
                 ? "Suas tarefas ficam salvas na nuvem e iguais em todos os aparelhos."
