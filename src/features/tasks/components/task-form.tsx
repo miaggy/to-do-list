@@ -84,17 +84,18 @@ export function TaskForm({
         />
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
         <div className="flex flex-col gap-2">
           <Label>Data</Label>
-          <div className="flex gap-1">
+          <div className="relative">
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   className={cn(
-                    "flex-1 justify-start rounded-2xl border-transparent bg-muted px-4 font-normal hover:bg-muted/70",
+                    "w-full justify-start rounded-2xl border-transparent bg-muted px-4 font-normal hover:bg-muted/70",
+                    dueDate && "pr-11",
                     !dueDate && "text-muted-foreground"
                   )}
                 >
@@ -127,7 +128,8 @@ export function TaskForm({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
+                size="icon-sm"
+                className="absolute top-1/2 right-1.5 -translate-y-1/2 text-muted-foreground"
                 aria-label="Remover data"
                 onClick={() => {
                   setValue("dueDate", null, { shouldDirty: true })
@@ -148,7 +150,7 @@ export function TaskForm({
               <Input
                 id="dueTime"
                 type="time"
-                className="w-28 px-3"
+                className="w-full px-3"
                 disabled={!dueDate}
                 value={field.value ?? ""}
                 onChange={(e) => field.onChange(e.target.value || null)}
