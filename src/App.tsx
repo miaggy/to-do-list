@@ -51,7 +51,12 @@ export default function App() {
 
       <ComposerBar />
       <TaskFormSheet />
-      <Toaster position="top-center" />
+      {/* Embaixo, acima da barra de ações: perto do polegar e longe do notch */}
+      <Toaster
+        position="bottom-center"
+        offset={{ bottom: "calc(env(safe-area-inset-bottom) + 5.5rem)" }}
+        mobileOffset={{ bottom: "calc(env(safe-area-inset-bottom) + 5.5rem)", left: 16, right: 16 }}
+      />
     </div>
   )
 }
