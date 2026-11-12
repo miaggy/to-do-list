@@ -188,7 +188,7 @@ export function TaskList() {
                 />
               )}
               {group.label}
-              <span className="num text-sm text-muted-foreground">
+              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-muted px-2 py-1 text-sm leading-none font-medium text-foreground/70 tabular-nums">
                 {group.tasks.length}
               </span>
             </h2>
