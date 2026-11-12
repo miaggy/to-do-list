@@ -150,7 +150,7 @@ export function TaskForm({
               <Input
                 id="dueTime"
                 type="time"
-                className="w-full px-3"
+                className="block h-11 w-full min-w-0 max-w-full appearance-none px-4 text-left [&::-webkit-date-and-time-value]:min-h-0 [&::-webkit-date-and-time-value]:text-left [&::-webkit-datetime-edit]:p-0"
                 disabled={!dueDate}
                 value={field.value ?? ""}
                 onChange={(e) => field.onChange(e.target.value || null)}

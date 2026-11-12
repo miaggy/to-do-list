@@ -106,7 +106,7 @@ function compareByDue(a: Task, b: Task) {
   return a.createdAt < b.createdAt ? -1 : 1
 }
 
-/** Data decrescente (mais distante primeiro); sem data, cai para prioridade. */
+/** Data decrescente (mais recente primeiro); sem data, cai para prioridade. */
 function compareByDueDesc(a: Task, b: Task) {
   if (a.dueDate && b.dueDate) {
     const aDue = `${a.dueDate}T${a.dueTime ?? "00:00"}`
@@ -133,7 +133,11 @@ function groupPending(tasks: Task[], filter: TaskFilter): TaskGroup[] {
   const today = todayKey()
   const tomorrow = toDateKey(addDays(new Date(), 1))
   const pending = tasks.filter((task) => !task.completed)
-  const sorted = (group: TaskGroup) => ({ ...group, tasks: group.tasks.sort(compareTasks) })
+  // Atrasadas: da mais recente para a mais antiga; demais: da mais próxima de hoje para a mais distante
+  const sorted = (group: TaskGroup) => ({
+    ...group,
+    tasks: group.tasks.sort(group.key === "overdue" ? compareByDueDesc : compareTasks),
+  })
   const overdue: TaskGroup = {
     key: "overdue",
     label: "Atrasadas",
@@ -184,7 +188,10 @@ function groupPending(tasks: Task[], filter: TaskFilter): TaskGroup[] {
     }
     return [overdue, ...weeks.filter(Boolean)]
       .filter((group) => group.tasks.length > 0)
-      .map((group) => ({ ...group, tasks: group.tasks.sort(compareByDue) }))
+      .map((group) => ({
+        ...group,
+        tasks: group.tasks.sort(group.key === "overdue" ? compareByDueDesc : compareByDue),
+      }))
   }
 
   const buckets: Record<string, TaskGroup> = {
@@ -212,9 +219,9 @@ function groupPending(tasks: Task[], filter: TaskFilter): TaskGroup[] {
     .map((key) => buckets[key])
     .filter((group) => group.tasks.length > 0)
     .map((group) =>
-      // Em "Todas" a lista é do mais distante para o mais próximo
-      filter === "all"
-        ? { ...group, tasks: group.tasks.sort(compareByDueDesc) }
+      // Em "Todas" a data vem antes da prioridade
+      filter === "all" && group.key !== "overdue"
+        ? { ...group, tasks: group.tasks.sort(compareByDue) }
         : sorted(group)
     )
 }

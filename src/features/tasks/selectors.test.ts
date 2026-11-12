@@ -66,15 +66,20 @@ describe("visão por período", () => {
     ])
   })
 
-  it("todas: dentro de cada grupo, da data mais distante para a mais próxima", () => {
+  it("todas: dentro de cada grupo, da data mais próxima de hoje para a mais distante", () => {
     expect(summary(groupTasks(tasks, "all"))).toEqual([
       "Atrasadas: atrasada",
       "Hoje: hoje",
       "Amanhã: amanhã",
-      "Próximas: dia 30, dia 20, dia 9, dia 6, quarta",
+      "Próximas: quarta, dia 6, dia 9, dia 20, dia 30",
       "Sem data: sem data",
       "Concluídas: feita",
     ])
+  })
+
+  it("atrasadas: da mais recente para a mais antiga", () => {
+    const list = [task("velha", "2026-10-20"), task("recente", "2026-10-30"), task("meio", "2026-10-25")]
+    expect(summary(groupTasks(list, "all"))).toEqual(["Atrasadas: recente, meio, velha"])
   })
 
   it("hoje e amanhã", () => {
