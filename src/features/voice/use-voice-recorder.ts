@@ -77,6 +77,10 @@ export function useVoiceRecorder({ getAccessToken, onFinal, onError, debug = fal
     window.clearInterval(intervalRef.current)
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
+    // Um AudioContext novo por gravação: no iOS o antigo fica "interrupted" depois da primeira
+    const audioContext = audioContextRef.current
+    audioContextRef.current = null
+    void audioContext?.close().catch(() => {})
     setLevel(0)
   }, [])
 
@@ -142,8 +146,9 @@ export function useVoiceRecorder({ getAccessToken, onFinal, onError, debug = fal
     const AudioContextClass =
       window.AudioContext ??
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-    audioContextRef.current ??= new AudioContextClass()
-    const audioContext = audioContextRef.current
+    void audioContextRef.current?.close().catch(() => {})
+    const audioContext = new AudioContextClass()
+    audioContextRef.current = audioContext
     void audioContext.resume()
 
     let stream: MediaStream
@@ -170,6 +175,8 @@ export function useVoiceRecorder({ getAccessToken, onFinal, onError, debug = fal
       if (event.data.size > 0) chunks.push(event.data)
     }
     recorder.onstop = () => {
+      // Gravação antiga (cancelada/trocada): não derruba o microfone da nova
+      if (session !== sessionRef.current) return
       release()
       recorderRef.current = null
       if (cancelledRef.current || session !== sessionRef.current) return
@@ -202,7 +209,9 @@ export function useVoiceRecorder({ getAccessToken, onFinal, onError, debug = fal
         window.clearInterval(intervalRef.current)
         if (recorder.state === "recording") recorder.stop()
       }
-      if (!lastSpeechAt && now - startedAt > NO_SPEECH_MS) {
+      // Se o contexto de áudio não está rodando o volume vem zerado: não dá para
+      // concluir que "não houve fala"; a gravação segue até o toque ou o limite.
+      if (!lastSpeechAt && now - startedAt > NO_SPEECH_MS && audioContext.state === "running") {
         fail(session, "no-speech")
       } else if (lastSpeechAt && now - lastSpeechAt > SILENCE_MS) {
         stopRecording("silêncio; encerrando")
@@ -233,7 +242,6 @@ export function useVoiceRecorder({ getAccessToken, onFinal, onError, debug = fal
     () => () => {
       cancelledRef.current = true
       release()
-      void audioContextRef.current?.close()
     },
     [release]
   )

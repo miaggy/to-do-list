@@ -12,18 +12,27 @@ const params = new URLSearchParams(window.location.search)
 const DEBUG = params.get("debug") === "voz"
 const FORCED = params.get("voz")
 
-/** O reconhecimento do WebKit no iOS só funciona na primeira vez. */
-function isIOS() {
+/**
+ * O reconhecimento de voz do WebKit só funciona na primeira vez. Isso vale para
+ * todo navegador no iOS (todos usam WebKit) e para o Safari no Mac.
+ */
+function isWebKitSpeech() {
   const ua = navigator.userAgent
-  return /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+  const ios = /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+  const desktopSafari = /Safari\//.test(ua) && !/Chrome|Chromium|Edg|OPR|Android/.test(ua)
+  return ios || desktopSafari
 }
 
 let healthPromise: Promise<boolean> | null = null
+/** Só guarda a resposta do servidor: falha de rede não pode travar o motor "server". */
 function serverTranscribeAvailable() {
   healthPromise ??= fetch("/api/health")
-    .then((r) => (r.ok ? r.json() : { transcribe: false }))
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
     .then((body: { transcribe?: boolean }) => !!body.transcribe)
-    .catch(() => false)
+    .catch(() => {
+      healthPromise = null
+      return false
+    })
   return healthPromise
 }
 
@@ -34,7 +43,7 @@ interface Options {
 
 /**
  * Escolhe como transformar fala em texto:
- * - "server": grava o áudio e transcreve no Worker (iOS, Firefox);
+ * - "server": grava o áudio e transcreve no Worker (iOS, Safari, Firefox);
  * - "browser": Web Speech API, com texto ao vivo (Chrome/Edge no desktop e Android).
  */
 export function useVoiceInput(options: Options) {
@@ -44,13 +53,22 @@ export function useVoiceInput(options: Options) {
 
   useEffect(() => {
     let active = true
-    void serverTranscribeAvailable().then((ok) => active && setServerReady(ok))
+    const check = () => {
+      void serverTranscribeAvailable().then((ok) => active && setServerReady(ok))
+    }
+    check()
+    // Se a checagem falhou (rede, app voltando do segundo plano), tenta de novo
+    const onWake = () => document.visibilityState !== "hidden" && check()
+    window.addEventListener("online", check)
+    document.addEventListener("visibilitychange", onWake)
     return () => {
       active = false
+      window.removeEventListener("online", check)
+      document.removeEventListener("visibilitychange", onWake)
     }
   }, [])
 
-  const preferServer = FORCED === "servidor" || isIOS() || !browser.supported
+  const preferServer = FORCED === "servidor" || isWebKitSpeech() || !browser.supported
   const engine: VoiceEngine =
     FORCED === "navegador"
       ? "browser"
