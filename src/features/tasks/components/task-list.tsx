@@ -15,7 +15,6 @@ import {
 } from "../selectors";
 import { useTaskUi } from "../store";
 import { PRIORITY_META, type Priority } from "../types";
-import { PriorityDot } from "./priority-badge";
 import { TaskItem } from "./task-item";
 
 function greeting() {
@@ -101,7 +100,6 @@ export function FilterChips() {
                 onClick={() => setPriorityFilter(f.value)}
                 className={chipClass(priorityFilter === f.value)}
               >
-                {f.value !== "all" && <PriorityDot priority={f.value} />}
                 {f.label}
               </button>
             ))
@@ -181,12 +179,6 @@ export function TaskList() {
                 group.key === "overdue" && "text-destructive",
               )}
             >
-              {group.priority && (
-                <PriorityDot
-                  priority={group.priority}
-                  className="self-center"
-                />
-              )}
               {group.label}
               <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-muted px-2 py-1 text-sm leading-none font-medium text-foreground/70 tabular-nums">
                 {group.tasks.length}

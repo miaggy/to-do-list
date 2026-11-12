@@ -10,14 +10,6 @@ import { useTaskUi } from "../store"
 import type { Task } from "../types"
 import { PriorityBadge } from "./priority-badge"
 
-const CHECKBOX_COLORS: Record<Task["priority"], string> = {
-  none: "",
-  low: "border-priority-low",
-  medium: "border-priority-medium",
-  high: "border-priority-high",
-  urgent: "border-priority-urgent",
-}
-
 export function TaskItem({ task }: { task: Task }) {
   const openEdit = useTaskUi((s) => s.openEdit)
   const due = formatDue(task)
@@ -42,10 +34,7 @@ export function TaskItem({ task }: { task: Task }) {
         checked={task.completed}
         onCheckedChange={(checked) => toggle(checked === true)}
         aria-label={task.completed ? "Marcar como pendente" : "Concluir tarefa"}
-        className={cn(
-          "mt-0.5 size-5 rounded-full",
-          !task.completed && CHECKBOX_COLORS[task.priority]
-        )}
+        className="mt-0.5 size-5 rounded-full"
       />
       <button
         type="button"
